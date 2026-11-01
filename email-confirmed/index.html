@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>이메일 확인 - XO 트레이닝</title>
+    <link rel="stylesheet" href="../assets.css" />
+  </head>
+  <body>
+    <main>
+      <div class="brand">XO 트레이닝</div>
+
+      <section id="success" hidden>
+        <h1 class="ok">이메일 확인이 완료되었어요</h1>
+        <p>이제 로그인해 주세요.</p>
+        <p id="open-wrap" hidden>
+          <a id="open-app" class="btn" href="xotraining://auth-callback">앱에서 계속하기</a>
+        </p>
+        <p class="muted" id="open-note" hidden>
+          버튼을 눌러도 앱이 열리지 않으면 앱을 직접 열어 이메일과 비밀번호로 로그인하면 됩니다.
+        </p>
+        <p>
+          <a id="open-web" class="btn" href="https://xotraining.vercel.app">웹에서 로그인하기</a>
+        </p>
+        <p class="muted">
+          앱을 설치한 안드로이드 기기에서는 “앱에서 계속하기”로 바로 로그인됩니다. 그 밖의
+          기기에서는 웹에서 이메일과 비밀번호로 로그인해 주세요.
+        </p>
+      </section>
+
+      <section id="failure" hidden>
+        <h1 class="err">확인 링크를 사용할 수 없어요</h1>
+        <p>
+          링크가 만료되었거나 이미 사용되었어요. 이미 확인을 마쳤다면 앱에서 바로 로그인해 보세요.
+        </p>
+        <p class="muted">
+          로그인이 안 되면 앱의 가입 화면에서 <b>확인 메일 다시 보내기</b>를 눌러 새 메일을 받아
+          주세요.
+        </p>
+      </section>
+
+      <section id="unknown" hidden>
+        <h1>이메일 확인</h1>
+        <p>확인 절차가 끝났다면 앱으로 돌아가 로그인해 주세요.</p>
+      </section>
+    </main>
+
+    <script>
+      // 인증 결과는 주소의 # 뒤에 담겨 온다. 이 페이지는 서버로 보내거나 저장하지 않고,
+      // "앱에서 계속하기" 버튼에서 같은 값을 앱 주소로 넘기는 데만 쓴다.
+      (function () {
+        var hash = (location.hash || '').replace(/^#/, '');
+        var params = {};
+        hash.split('&').forEach(function (pair) {
+          if (!pair) return;
+          var i = pair.indexOf('=');
+          var key = decodeURIComponent((i < 0 ? pair : pair.slice(0, i)).replace(/\+/g, ' '));
+          var val = i < 0 ? '' : decodeURIComponent(pair.slice(i + 1).replace(/\+/g, ' '));
+          params[key] = val;
+        });
+
+        var show = function (id) {
+          document.getElementById(id).hidden = false;
+        };
+
+        if (params.error || params.error_code) {
+          show('failure');
+        } else if (params.access_token && params.refresh_token) {
+          show('success');
+          // 앱 열기 버튼은 앱을 설치할 수 있는 안드로이드에서만 보인다.
+          // 앱이 열리면 auth-callback 화면이 같은 토큰으로 자동 로그인한다.
+          if (/Android/i.test(navigator.userAgent)) {
+            document.getElementById('open-app').href = 'xotraining://auth-callback#' + hash;
+            document.getElementById('open-wrap').hidden = false;
+            document.getElementById('open-note').hidden = false;
+          }
+        } else {
+          show('unknown');
+        }
+      })();
+    </script>
+  </body>
+</html>
